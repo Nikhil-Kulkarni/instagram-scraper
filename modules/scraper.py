@@ -6,16 +6,17 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from random import seed
+from random import random
+from random import randint
 
 class Scraper(object):
     """Able to start up a browser, to authenticate to Instagram and get
     followers and people following a specific user."""
 
 
-    def __init__(self, target):
-        self.target = target
-        self.driver = webdriver.Chrome('drivers/chromedriver')
+    def __init__(self):
+        self.driver = webdriver.Chrome('drivers/chromedriver2')
 
 
     def close(self):
@@ -32,28 +33,41 @@ class Scraper(object):
 
         # Go to log in
         login_link = WebDriverWait(self.driver, 5).until(
-            EC.presence_of_element_located((By.LINK_TEXT, 'Log in'))
+            EC.presence_of_element_located((By.LINK_TEXT, 'Forgot password?'))
         )
-        login_link.click()
 
         # Authenticate
         username_input = self.driver.find_element_by_xpath(
-            '//input[@placeholder="Username"]'
+            '//input[@name="username"]'
         )
         password_input = self.driver.find_element_by_xpath(
-            '//input[@placeholder="Password"]'
+            '//input[@name="password"]'
         )
 
         username_input.send_keys(username)
         password_input.send_keys(password)
         password_input.send_keys(Keys.RETURN)
-        time.sleep(1)
+        time.sleep(10)
 
 
-    def get_users(self, group, verbose = False):
+    def get_users(self, group, target, link, verbose = False):
+        f = open("output.txt", "a")
         """Return a list of links to the users profiles found."""
 
-        self._open_dialog(self._get_link(group))
+        if link is None:
+            wblink = self._get_link(group, target)
+            if wblink is None:
+                return []
+            self._open_dialog(wblink)
+            if self.users_list_container is None:
+                return None
+        else:
+            wblink = self._get_link_by_link(group, link)
+            if wblink is None:
+                return []
+            self._open_dialog(wblink)
+            if self.users_list_container is None:
+                return None
 
         print('\nGetting {} users…{}'.format(
             self.expected_number,
@@ -74,15 +88,19 @@ class Scraper(object):
                 if index < last_user_index:
                     continue
 
+                if index > 100:
+                    return links
+
                 try:
                     link_to_user = user.find_element(By.TAG_NAME, 'a').get_attribute('href')
                     last_user_index = index
                     if link_to_user not in links:
                         links.append(link_to_user)
                         if verbose:
+                            f.write(link_to_user + "\n")
                             print(
-                                '{0:.2f}% {1:s}'.format(
-                                round(index / self.expected_number * 100, 2),
+                                '{0:.2f} {1:s}'.format(
+                                index,
                                 link_to_user
                                 )
                             )
@@ -95,6 +113,7 @@ class Scraper(object):
             if updated_list[last_user_index] is updated_list[-1]:
                 retry -= 1
 
+        f.close()
         print('100% Complete')
         return links
 
@@ -108,22 +127,37 @@ class Scraper(object):
             re.search('(\d+)', link.text).group(1)
         )
         time.sleep(1)
-        self.users_list_container = self.driver.find_element_by_xpath(
-            '//div[@role="dialog"]//ul/parent::div'
-        )
+        try:
+            self.users_list_container = self.driver.find_element_by_xpath(
+                '//div[@role="dialog"]//ul/parent::div'
+            )
+        except:
+            self.users_list_container = None
 
 
-    def _get_link(self, group):
+    def _get_link(self, group, target):
         """Return the element linking to the users list dialog."""
 
-        print('\nNavigating to %s profile…' % self.target)
-        self.driver.get('https://www.instagram.com/%s/' % self.target)
+        print('\nNavigating to %s profile…' % target)
+        self.driver.get('https://www.instagram.com/%s/' % target)
         try:
             return WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, group))
             )
         except:
-            self._get_link(self.target, group)
+            return None
+
+    def _get_link_by_link(self, group, link):
+        """Return the element linking to the users list dialog."""
+
+        print('\nNavigating to %s profile…' % link)
+        self.driver.get(link)
+        try:
+            return WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, group))
+            )
+        except:
+            return None
 
 
     def _get_updated_user_list(self):
@@ -141,5 +175,5 @@ class Scraper(object):
                 'arguments[0].scrollTop = arguments[0].scrollHeight',
                 element
             )
-            time.sleep(.2)
+            time.sleep(random() * randint(2, 5))
             times -= 1

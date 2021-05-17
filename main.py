@@ -12,17 +12,28 @@ groups = ['followers', 'following']
 # Ask for input
 target = ask_input('Enter the target username: ')
 group = ask_multiple_option(options = groups + ['both']);
-print('\nEnter your Instagram credentials')
-username = ask_input('Username: ')
-password = ask_input(is_password = True)
+usernames = ['', '', '', '', '', '', '', '', '', '', '', '', '', '']
+passwords = ['', '', '', '', '', '', '', '', '', '', '', '', '', '']
 
-def scrape(group):
+def scrape(group, user):
     differs = False
-    scraper = Scraper(target)
+    scraper = Scraper()
     startTime = datetime.now()
+    userIndex = 0
+    
+    scraper.authenticate(usernames2[userIndex], passwords2[userIndex])
 
-    scraper.authenticate(username, password)
-    users = scraper.get_users(group, verbose=True)
+    users = scraper.get_users(group, target, None, verbose=True)
+    for index, user in enumerate(users):
+        new_users = scraper.get_users(group, None, user, verbose=True)
+        if new_users is None or index % 7 == 0:
+            userIndex = (userIndex + 1) % 1
+            scraper.close()
+            scraper = Scraper()
+            scraper.authenticate(usernames2[userIndex], passwords2[userIndex])
+        else:
+            users.extend(new_users)
+
     scraper.close()
 
     last_users = file_io.read_last(target, group)
@@ -38,6 +49,6 @@ def scrape(group):
 
 if (group == 'both'):
     for group in groups:
-        scrape(group)
+        scrape(group, user)
 else:
-    scrape(group)
+    scrape(group, user)
