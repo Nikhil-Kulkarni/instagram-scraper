@@ -18,8 +18,8 @@ groups = ['followers', 'following']
 target = ask_input('Enter the target username: ')
 group = ask_multiple_option(options = groups + ['both']);
 option = ask_input('0) profile downloader 1) following scraper: ')
-usernames = []
-passwords = []
+usernames = ['nikhilpods', 'jcatalan1996']
+passwords = ['10118Manning', '10118Manning']
 
 def scrape(group, option):
     differs = False
@@ -78,16 +78,19 @@ def scrape(group, option):
                 profiler.authenticate(usernames[userIndex], passwords[userIndex])
             username = link.split('https://www.instagram.com/', 1)[1].split('/')[0]
             profile = profiler.get_user_profile(username)
-            user = profile['graphql']['user']
-            if not user['is_private']:
-                followers_count = user['edge_followed_by']['count']
-                following_count = user['edge_follow']['count']
-                cur = conn.cursor()
-                cur.execute(sql, (user['id'], user['username'], user['biography'], user['external_url'], user['full_name'], user['is_business_account'], user['is_professional_account'], user['business_email'], user['business_phone_number'], user['business_category_name'], user['category_name'], followers_count, following_count, user['is_private']))
-                conn.commit()
-                cur.close()
-            iteration = iteration + 1
-            time.sleep(random() * randint(1, 5))
+            if profile:
+                graphql = profile['graphql']
+                if graphql:
+                    user = profile['graphql']['user']
+                    if not user['is_private']:
+                        followers_count = user['edge_followed_by']['count']
+                        following_count = user['edge_follow']['count']
+                        cur = conn.cursor()
+                        cur.execute(sql, (user['id'], user['username'], user['biography'], user['external_url'], user['full_name'], user['is_business_account'], user['is_professional_account'], user['business_email'], user['business_phone_number'], user['business_category_name'], user['category_name'], followers_count, following_count, user['is_private']))
+                        conn.commit()
+                        cur.close()
+                    iteration = iteration + 1
+                    time.sleep(random() * randint(1, 5))
         conn.close()
         profiler.close()
 
