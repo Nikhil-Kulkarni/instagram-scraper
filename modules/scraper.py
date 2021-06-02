@@ -51,7 +51,7 @@ class Scraper(object):
 
 
     def get_users(self, group, target, link, verbose = False):
-        f = open("output.txt", "a")
+        f = open("links.txt", "a")
         """Return a list of links to the users profiles found."""
 
         if link is None:

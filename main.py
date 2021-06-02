@@ -18,22 +18,22 @@ groups = ['followers', 'following']
 target = ask_input('Enter the target username: ')
 group = ask_multiple_option(options = groups + ['both']);
 option = ask_input('0) profile downloader 1) following scraper: ')
-usernames = ['nikhilpods', 'jcatalan1996']
-passwords = ['10118Manning', '10118Manning']
+usernames = ['']
+passwords = ['']
 
 def scrape(group, option):
     differs = False
     startTime = datetime.now()
     userIndex = 0
 
-    if option == 1:
+    if option == "1":
         scraper = Scraper()
         scraper.authenticate(usernames[userIndex], passwords[userIndex])
         users = scraper.get_users(group, target, None, verbose=True)
         for index, user in enumerate(users):
             new_users = scraper.get_users(group, None, user, verbose=True)
             if new_users is None or index % randint(20, 42) == 0:
-                userIndex = (userIndex + 1) % 3
+                userIndex = (userIndex + 1) % len(usernames)
                 scraper.close()
                 scraper = Scraper()
                 scraper.authenticate(usernames[userIndex], passwords[userIndex])
@@ -59,7 +59,7 @@ def scrape(group, option):
             database="creators_store",
             user="postgres",
             password="postgres")
-        f = open('everything.txt', 'r');
+        f = open('links.txt', 'r');
         lines = f.readlines()
         profiler = Profiler()
         profiler.authenticate(usernames[userIndex], passwords[userIndex])
